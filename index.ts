@@ -16,12 +16,11 @@ const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || "5000", 10);
 
 app.use(cors({
-  origin: 'http://localhost:5173', // Vite default port
+  origin: 'http://localhost:5173', 
   credentials: true
 }));
 app.use(express.json());
 
-// Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = 'uploads';
@@ -38,7 +37,7 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 5 * 1024 * 1024
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -92,7 +91,6 @@ app.post(
 
       console.log(`Processing barcode: "${barcode}" (length: ${barcode.length})`);
       
-      // Trim whitespace and normalize the barcode
       const normalizedBarcode = barcode.trim();
       
       const product: Product =
@@ -132,7 +130,6 @@ app.get("/health", (req: Request, res: Response<ApiResponse>) => {
   res.json({ message: "Server is running" });
 });
 
-// Get available barcodes for testing
 app.get("/api/barcodes", (req: Request, res: Response<ApiResponse<string[]>>) => {
   try {
     const availableBarcodes = Object.keys(productDatabase).filter(key => key !== "DEFAULT");
@@ -141,8 +138,6 @@ app.get("/api/barcodes", (req: Request, res: Response<ApiResponse<string[]>>) =>
     res.status(500).json({ error: "Failed to fetch barcodes" });
   }
 });
-
-// Test barcode detection with debug info
 app.post("/api/test-scan", upload.single('image'), async (req: Request, res: Response<ApiResponse<any>>) => {
   try {
     if (!req.file) {
@@ -154,7 +149,6 @@ app.post("/api/test-scan", upload.single('image'), async (req: Request, res: Res
     const imageBuffer = fs.readFileSync(req.file.path);
     const scanResult = await RealBarcodeDecoder.scanFromImageBuffer(imageBuffer);
     
-    // Clean up uploaded file
     fs.unlinkSync(req.file.path);
     
     res.json({
@@ -176,8 +170,6 @@ app.post("/api/test-scan", upload.single('image'), async (req: Request, res: Res
     res.status(500).json({ error: "Failed to test barcode detection" });
   }
 });
-
-// Simple test endpoint that always returns a test barcode
 app.post("/api/test-simple", upload.single('image'), async (req: Request, res: Response<ApiResponse<ScannedItem>>) => {
   try {
     if (!req.file) {
@@ -186,10 +178,8 @@ app.post("/api/test-simple", upload.single('image'), async (req: Request, res: R
 
     console.log(`🧪 Simple test with: ${req.file.filename}`);
     
-    // Clean up uploaded file
     fs.unlinkSync(req.file.path);
     
-    // Return a test barcode
     const testBarcode = "5901234123457";
     const product: Product = productDatabase[testBarcode] || productDatabase["DEFAULT"];
     
@@ -241,7 +231,7 @@ app.post("/api/scan-image", upload.single('image'), async (req: Request, res: Re
     
     if (!scanResult.success || !scanResult.barcode) {
       fs.unlinkSync(req.file.path);
-      console.log(`❌ Barcode detection failed: ${scanResult.error}`);
+      console.log(` Barcode detection failed: ${scanResult.error}`);
       return res.status(400).json({ 
         error: scanResult.error || "No barcode found in image",
         debugInfo: scanResult.debugInfo
